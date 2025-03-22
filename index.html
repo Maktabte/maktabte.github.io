@@ -2668,54 +2668,10 @@
             /**
              * Send receipt to email using EmailJS
              */
-            function sendReceiptByEmail() {
-                const email = emailInput.value.trim();
-                
-                if (!email || !validateEmail(email)) {
-                    showEmailStatus('الرجاء إدخال عنوان بريد إلكتروني صحيح', 'error');
-                    return;
-                }
-                
-                showEmailStatus('جارٍ إرسال الإيصال...', 'loading');
-                
-                // Get receipt info
-                const receiptId = receiptNumber.textContent.replace('رقم الإيصال #', '');
-                const receiptDateText = receiptDate.textContent;
-                const totalAmount = receiptTotal.textContent;
-                
-                // Format cart items for email
-                let itemsText = '';
-                cart.forEach(item => {
-                    itemsText += `${item.name} x ${item.quantity} - ${(item.price * item.quantity).toFixed(2)} دينار\n`;
-                });
-                
-                // Send email using EmailJS
-                emailjs.send(
-                    'service_jm8805r', // Create this in EmailJS dashboard
-                    'template_860c1pw', // Create this in EmailJS dashboard
-                    {
-                        to_email: email,
-                        receipt_number: receiptId,
-                        receipt_date: receiptDateText,
-                        receipt_items: itemsText,
-                        receipt_total: totalAmount,
-                        to_name: '' // Optional: add customer name if available
-                    }
-                )
-                .then(function(response) {
-                    console.log('SUCCESS!', response.status, response.text);
-                    showEmailStatus('تم إرسال الإيصال بنجاح إلى ' + email, 'success');
-                    
-                    // Close modal after success
-                    setTimeout(() => {
-                        closeModal(emailModal);
-                    }, 2000);
-                })
-                .catch(function(error) {
-                    console.log('FAILED...', error);
-                    showEmailStatus('فشل في إرسال البريد الإلكتروني. حاول مرة أخرى.', 'error');
-                });
-            }
+            /**
+ * Send receipt to email using EmailJS
+ * Replace your existing sendReceiptByEmail function with this one
+ */
 
             /**
              * Show email status message
@@ -3271,69 +3227,90 @@ document.addEventListener('DOMContentLoaded', function() {
         return re.test(email.toLowerCase());
     }
     
-    function sendReceiptByEmail() {
-        const email = emailInput.value.trim();
-        
-        if (!email || !validateEmail(email)) {
-            showEmailStatus('الرجاء إدخال عنوان بريد إلكتروني صحيح', 'error');
-            return;
-        }
-        
-        showEmailStatus('جارٍ إرسال الإيصال...', 'loading');
-        
-        // Get receipt info from the page
-        const receiptNumber = document.getElementById('receiptNumber');
-        const receiptDate = document.getElementById('receiptDate');
-        const receiptTotal = document.getElementById('receiptTotal');
-        const cartItems = window.cart || [];
-        
-        const receiptId = receiptNumber ? receiptNumber.textContent.replace('رقم الإيصال #', '') : 'Unknown';
-        const receiptDateText = receiptDate ? receiptDate.textContent : 'Unknown';
-        const totalAmount = receiptTotal ? receiptTotal.textContent : 'Unknown';
-        
-        // Format cart items for email
-        let itemsText = '';
-        if (cartItems && cartItems.length > 0) {
-            cartItems.forEach(item => {
-                itemsText += `${item.name} x ${item.quantity} - ${(item.price * item.quantity).toFixed(2)} دينار\n`;
-            });
-        } else {
-            itemsText = 'No items';
-        }
-        
-        console.log('Sending email with EmailJS...');
-        console.log('Service ID: service_jm8805r');
-        console.log('Template ID: template_860c1pw');
-        console.log('Email:', email);
-        
-        // Send email using EmailJS
-        emailjs.send(
-            'service_jm8805r',
-            'template_860c1pw',
-            {
-                to_email: email,
-                receipt_number: receiptId,
-                receipt_date: receiptDateText,
-                receipt_items: itemsText,
-                receipt_total: totalAmount,
-                to_name: '' // Optional: add customer name if available
-            }
-        )
-        .then(function(response) {
-            console.log('SUCCESS!', response.status, response.text);
-            showEmailStatus('تم إرسال الإيصال بنجاح إلى ' + email, 'success');
-            
-            // Close modal after success
-            setTimeout(() => {
-                closeModal(emailModal);
-            }, 2000);
-        })
-        .catch(function(error) {
-            console.log('FAILED...', error);
-            showEmailStatus('فشل في إرسال البريد الإلكتروني. حاول مرة أخرى.', 'error');
-        });
+    /**
+ * Send receipt to email using EmailJS
+ * Replace your existing sendReceiptByEmail function with this one
+ */
+function sendReceiptByEmail() {
+    const email = emailInput.value.trim();
+    
+    if (!email || !validateEmail(email)) {
+        showEmailStatus('الرجاء إدخال عنوان بريد إلكتروني صحيح', 'error');
+        return;
     }
     
+    showEmailStatus('جارٍ إرسال الإيصال...', 'loading');
+    
+    // Get receipt info from the DOM
+    const receiptId = receiptNumber.textContent.replace('رقم الإيصال #', '');
+    const receiptDateText = receiptDate.textContent;
+    const totalAmount = receiptTotal.textContent;
+    
+    // Format all receipt data into one message
+    let message = `
+إيصال من مكتبتي
+===========================
+${receiptDateText}
+رقم الإيصال: ${receiptId}
+===========================
+
+المنتجات:
+`;
+    
+    // Get all receipt items directly from the DOM
+    const receiptItemsElems = document.querySelectorAll('.receipt-item');
+    if (receiptItemsElems && receiptItemsElems.length > 0) {
+        receiptItemsElems.forEach(item => {
+            message += item.textContent.trim() + '\n';
+        });
+    } else if (cart && cart.length > 0) {
+        // Fallback to cart if DOM elements aren't found
+        cart.forEach(item => {
+            const itemTotal = (item.price * item.quantity).toFixed(2);
+            message += `${item.name} (${item.quantity}) - ${itemTotal} دينار\n`;
+        });
+    } else {
+        message += "لا توجد منتجات";
+    }
+    
+    // Add total to message
+    message += `
+===========================
+المجموع: ${totalAmount}
+===========================
+
+شكراً للتسوق معنا!
+مكتبتي
+`;
+    
+    // Log the message for troubleshooting
+    console.log('Sending email with message:', message);
+    
+    // Send email using EmailJS with simplified parameters
+    emailjs.send(
+        'service_jm8805r',
+        'template_860c1pw',
+        {
+            to_email: email,
+            message: message,
+            name: 'مكتبتي - إيصال الشراء',
+            time: new Date().toLocaleString('ar-AE')
+        }
+    )
+    .then(function(response) {
+        console.log('Email sent successfully:', response.status, response.text);
+        showEmailStatus('تم إرسال الإيصال بنجاح إلى ' + email, 'success');
+        
+        // Close modal after success
+        setTimeout(() => {
+            closeModal(emailModal);
+        }, 2000);
+    })
+    .catch(function(error) {
+        console.error('Email failed to send:', error);
+        showEmailStatus('فشل في إرسال البريد الإلكتروني. حاول مرة أخرى.', 'error');
+    });
+}
     // Attach all event listeners
     if (emailReceiptPill) {
         console.log('Email receipt pill found, attaching click handler');
@@ -3363,29 +3340,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add a direct button as backup
-    try {
-        const receiptSection = document.querySelector('.fullscreen-modal-body');
-        if (receiptSection && emailReceiptPill) {
-            const backupButton = document.createElement('button');
-            backupButton.textContent = 'إرسال الإيصال عبر البريد الإلكتروني';
-            backupButton.style.marginTop = '20px';
-            backupButton.style.padding = '10px 15px';
-            backupButton.style.backgroundColor = 'var(--accent)';
-            backupButton.style.color = 'white';
-            backupButton.style.border = 'none';
-            backupButton.style.borderRadius = 'var(--border-radius)';
-            backupButton.style.cursor = 'pointer';
-            backupButton.style.display = 'block';
-            backupButton.style.margin = '20px auto';
-            backupButton.addEventListener('click', showEmailModal);
-            
-            // Add after the email pill's parent
-            emailReceiptPill.parentNode.after(backupButton);
-            console.log('Backup email button added');
-        }
-    } catch (e) {
-        console.error('Could not add backup button:', e);
-    }
+ 
     
     console.log('Email functionality setup complete');
 });
