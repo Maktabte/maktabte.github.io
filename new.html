@@ -1,0 +1,3394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الدفع الذاتي - مكتبتي</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            // Initialize EmailJS with your user ID
+            emailjs.init("F4mz0C_iDO5B8qfF0");
+        })();
+    </script>
+    <style>
+        :root {
+            /* Font variables */
+            --font-family: "Noto Sans Arabic", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            
+            /* Color variables - Changed primary color to #86c9c1 */
+            --accent-h: 172;
+            --accent-s: 39%;
+            --accent-l: 65%;
+            --accent: #86c9c1;
+            --button-gold: #ffc233;
+            --button-gold-hover: #ffbf00;
+
+            --background-body: #ffffff;
+            --background-alt: #f7f7f7;
+            --background: #efefef;
+            --background-input: #ffffff;
+            --text-main: #363636;
+            --text-muted: #70777f;
+            --links: var(--accent);
+            --focus: var(--accent);
+            --border: #b9b8b8;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --dialog-background: #ffffff;
+            --scan-frame-color: rgba(255, 255, 255, 0.9);
+            --camera-actions-background: #ffffff;
+            
+            /* Other variables */
+            --body-max-width: 100vw;
+            --border-radius: 6px;
+            --animation-duration: 0.2s;
+            --container-max-width: 100%;
+            --capture-border-width: 3px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --accent: #86c9c1;
+                --background-body: #212529;
+                --background-alt: #343a40;
+                --background: var(--background-alt);
+                --background-input: var(--background);
+                --text-main: #dbdbdb;
+                --text-muted: #a9b1ba;
+                --links: var(--accent);
+                --focus: var(--accent);
+                --border: #495057;
+                --error-color: #ff808d;
+                --success-color: #75b798;
+                --dialog-background: var(--background-alt);
+                --camera-actions-background: var(--background);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-family);
+            line-height: 1.5;
+            color: var(--text-main);
+            background: var(--background-body);
+            text-rendering: optimizeLegibility;
+            display: flex;
+            flex-direction: column;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--button-gold);
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: background-color var(--animation-duration) ease;
+        }
+
+        button:hover {
+            background-color: var(--button-gold-hover)
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        input {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            background-color: var(--background-input);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--focus);
+            box-shadow: 0 0 0 2px rgba(134, 201, 193, 0.25);
+        }
+
+        .header {
+            text-align: center;
+            padding: 0.75rem 0;
+            background-color: var(--accent);
+            color: white;
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .header p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .logo {
+            max-width: 60px;
+            margin-left: 1rem;
+        }
+
+        .main-layout {
+            display: flex;
+            height: calc(100% - 68px);
+            width: 100%;
+        }
+
+        .scanner-section {
+            flex: 1;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        
+        /* Manual add product styles */
+        .scan-manual-toggle {
+            display: flex;
+            margin-bottom: 0.5rem;
+            border-radius: var(--border-radius);
+            background-color: var(--background);
+            border: 1px solid var(--border);
+        }
+        
+        .scan-manual-toggle button {
+            flex: 1;
+            border-radius: 0;
+            background-color: transparent;
+            color: var(--text-main);
+            padding: 0.4rem;
+            border: none;
+            font-size: 0.85rem;
+        }
+        
+        .scan-manual-toggle button.active {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .product-search {
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        
+        .product-search input {
+            width: 100%;
+            padding-right: 2.5rem;
+        }
+        
+        .product-search .search-icon {
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+            overflow-y: auto;
+            max-height: 100%;
+            padding-right: 0.4rem;
+            padding-bottom: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .product-block {
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100px; /* Fixed height */
+            max-height: 100px;
+            overflow: hidden;
+        }
+        
+        .product-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .product-block:active {
+            transform: translateY(0);
+            opacity: 0.8;
+        }
+        
+        .product-block-name {
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            /* Add ellipsis for long text */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.2;
+        }
+        
+        .product-block-price {
+            font-size: 0.75rem;
+            margin-top: auto;
+            font-weight: bold;
+        }
+        
+        /* Scrollbar styling for product grid */
+        .products-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .products-grid::-webkit-scrollbar-track {
+            background: var(--background);
+            border-radius: 10px;
+        }
+        
+        .products-grid::-webkit-scrollbar-thumb {
+            background-color: var(--accent);
+            border-radius: 10px;
+        }
+        
+        .no-products-found {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 0;
+        }
+
+        .cart-section {
+            flex: 1;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        #videoContainer {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            overflow: hidden;
+            border: var(--capture-border-width) solid var(--border);
+            border-radius: var(--border-radius);
+            background-color: #000000;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #scannerPlaceholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            background-color: var(--background-alt);
+            text-align: center;
+        }
+
+        #interactive {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #interactive.viewport canvas, 
+        #interactive.viewport video {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            object-fit: cover;
+        }
+
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 150px;
+            pointer-events: none;
+            z-index: 10;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scan-frame svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scan-instructions {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #cartItems {
+            overflow-y: auto;
+            flex: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .cart-item-price {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .quantity-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text-main);
+            font-size: 0.8rem;
+        }
+
+        .remove-btn {
+            background-color: var(--error-color);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            font-weight: bold;
+        }
+
+        .cart-footer {
+            margin-top: 0.5rem;
+        }
+
+        /* Empty cart message */
+        .empty-cart {
+            text-align: center;
+            padding: 2rem;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            color: var(--text-muted);
+        }
+
+        /* Admin button - less visible */
+        .admin-toggle {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 50;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            background-color: transparent;
+            color: var(--border);
+            opacity: 0.3;
+            font-size: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            border: none;
+            cursor: default;
+        }
+        
+        .admin-toggle:hover {
+            opacity: 0.6;
+            background-color: transparent;
+        }
+        
+        .admin-toggle svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--dialog-background);
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            max-width: 90%;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            margin-bottom: 1rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Fullscreen modals for checkout */
+        .fullscreen-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-body);
+            z-index: 2000;
+            flex-direction: column;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .fullscreen-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .fullscreen-modal-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .fullscreen-modal-footer {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Admin panel (now a popup) */
+        #adminInterface {
+            width: 90%;
+            max-width: 800px;
+            height: 90%;
+            overflow-y: auto;
+        }
+
+        .admin-panel {
+            padding: 1rem;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            direction: ltr;
+            text-align: left;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .action-button {
+            padding: 0.5rem 1rem;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        
+        .action-button:hover {
+            background-color: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 10%));
+        }
+        
+        .admin-panel-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .product-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .product-list th,
+        .product-list td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .product-list tr:last-child td {
+            border-bottom: none;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Payment Styles */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .payment-method {
+            padding: 1rem;
+            text-align: center;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color var(--animation-duration) ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .payment-method:hover {
+            background-color: var(--background);
+        }
+
+        .payment-method.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .payment-method img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .payment-form {
+            padding: 1rem;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Receipt Styles */
+        .receipt {
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            max-width: 400px;
+            margin: 0 auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .receipt-header {
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .receipt-items {
+            margin-bottom: 1rem;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .receipt-total {
+            border-top: 1px dashed #ccc;
+            padding-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Email pill */
+        .email-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color var(--animation-duration) ease;
+        }
+        
+        .email-pill:hover {
+            background-color: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 10%));
+        }
+        
+        .email-pill svg {
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        .email-status {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+        }
+        
+        .email-status.success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid var(--success-color);
+        }
+        
+        .email-status.error {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid var(--error-color);
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .loading::after {
+            content: '';
+            width: 2rem;
+            height: 2rem;
+            border: 4px solid var(--background);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Admin modals are in English, LTR */
+        #editProductModal .modal-content,
+        #addProductModal .modal-content,
+        #importProductsModal .modal-content,
+        #scannerModal .scanner-modal-content,
+        #adminScannerModal .scanner-modal-content {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Regular modals are in Arabic, RTL */
+        #confirmModal .modal-content,
+        #emailModal .modal-content {
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* Sync notification styles */
+        .sync-notification {
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Show last sync time in admin panel */
+        .sync-status {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sync-status.syncing {
+            color: var(--accent);
+        }
+
+        /* Add CSS for a loading spinner */
+        .sync-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Scanner modal */
+        .scanner-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .scanner-modal-content {
+            width: 90%;
+            max-width: 600px;
+            background-color: var(--dialog-background);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .scanner-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .scanner-modal-body {
+            padding: 1rem;
+        }
+        
+        .scanner-viewport {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background-color: #000;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .scan-target-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 100px;
+            border: 2px dashed rgba(255, 255, 255, 0.7);
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .barcode-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .barcode-input-group input {
+            flex: 1;
+        }
+        
+        .scan-barcode-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .scanner-section, .cart-section {
+                border: none;
+                max-height: 50%;
+            }
+            
+            .scanner-section {
+                border-bottom: 1px solid var(--border);
+            }
+
+            .payment-methods {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+    </style>
+    <!-- Add Noto Sans Arabic font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="adminToggle" class="admin-toggle" title="Admin">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+    </button>
+
+    <header class="header">
+        <img src="//maktabte.net/cdn/shop/files/logo.png?v=1733603427&width=150" alt="Logo" class="logo" style="filter: brightness(0) invert(1);">
+        <div class="header-content">
+            <h1>نظام الدفع الذاتي</h1>
+            <p>امسح منتجاتك، ادفع، واذهب!</p>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Scanner Section -->
+        <section class="scanner-section">
+            <div class="section-title">
+                <h2>إضافة المنتجات</h2>
+            </div>
+            
+            <div class="scan-manual-toggle">
+                <button id="scanToggleBtn" class="active">الماسح الضوئي</button>
+                <button id="manualToggleBtn">إضافة يدوية</button>
+            </div>
+            
+            <!-- Scanner View -->
+            <div id="scannerView" style="height: 100%; display: flex; flex-direction: column;">
+                <div id="videoContainer">
+                    <div id="scannerPlaceholder">
+                        <button id="startScannerBtn">بدء الماسح الضوئي</button>
+                    </div>
+                    <div id="interactive" class="viewport" hidden>
+                        <div id="scanFrame" class="scan-frame">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                <path d="M336 448h56a56 56 0 0056-56v-56M448 176v-56a56 56 0 00-56-56h-56M176 448h-56a56 56 0 01-56-56v-56M64 176v-56a56 56 0 0156-56h56" fill="none" stroke="var(--scan-frame-color)" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div id="scanFeedback" class="scan-instructions">انقر على الزر للبدء</div>
+            </div>
+            
+            <!-- Manual Add View -->
+            <div id="manualView" hidden style="height: 80%; display: flex; flex-direction: column;">
+               <div class="product-search">
+                   <input type="text" id="productSearchInput" placeholder="بحث عن منتج...">
+                   <span class="search-icon">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                           <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                       </svg>
+                   </span>
+               </div>
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; margin-bottom: 0.5rem;">
+                   <small style="color: var(--text-muted); font-size: 0.75rem;">تم العثور على <span id="productCount">0</span> منتج</small>
+               </div>
+               <div id="productsGrid" class="products-grid" style="flex: 1; overflow-y: auto;">
+                   <!-- Product blocks will be inserted here dynamically -->
+               </div>
+           </div>
+        </section>
+
+        <!-- Cart Section -->
+        <section class="cart-section">
+            <div class="section-title">
+                <h2>سلة التسوق</h2>
+                <button id="clearCartBtn">تفريغ</button>
+            </div>
+            <div id="cartItems">
+                <div class="empty-cart">سلة التسوق فارغة. ابدأ بمسح المنتجات!</div>
+            </div>
+            <div id="cartTotal" class="cart-total" hidden>
+                <span>المجموع:</span>
+                <span id="totalAmount">0.00 دينار</span>
+            </div>
+            <div class="cart-footer">
+                <button id="checkoutBtn" hidden>متابعة للدفع</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Checkout Section as Popup -->
+    <div id="checkoutSection" class="fullscreen-modal">
+        <div class="fullscreen-modal-header">
+            <h2>الدفع</h2>
+            <button class="modal-close" id="closeCheckoutBtn">&times;</button>
+        </div>
+        <div class="fullscreen-modal-body">
+            <div class="payment-methods">
+                <div class="payment-method" data-method="cash">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNNTEyIDgwYzAgMTcuNy0xNC4zIDMyLTMyIDMySDMyYy0xNy43IDAtMzItMTQuMy0zMi0zMlM0OCA2NCA2NCA2NGg0NDhjMTcuNyAwIDMyIDE0LjMgMzIgMzJ6TTQ4MCAxODRjMCAxNy43LTE0LjMgMzItMzIgMzJIMzJjLTE3LjcgMC0zMi0xNC4zLTMyLTMyUzE0LjMgMTUyIDMyIDE1Mmg0MTZjMTcuNyAwIDMyIDE0LjMgMzIgMzJ6TTQ0OCAyODhjMCAxNy43LTE0LjMgMzItMzIgMzJIMzJjLTE3LjcgMC0zMi0xNC4zLTMyLTMyUzE0LjMgMjU2IDMyIDI1Nmg0MTZjMTcuNyAwIDMyIDE0LjMgMzIgMzJ6TTQxNiAzOTJjMCAxNy43LTE0LjMgMzItMzIgMzJIMzJjLTE3LjcgMC0zMi0xNC4zLTMyLTMyUzE0LjMgMzYwIDMyIDM2MGgzNTJjMTcuNyAwIDMyIDE0LjMgMzIgMzJ6IiBmaWxsPSIjODZjOWMxIi8+PC9zdmc+" alt="نقدًا">
+                    <h3>نقدًا</h3>
+                    <p>الدفع نقدًا</p>
+                </div>
+                <div class="payment-method" data-method="card">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48cGF0aCBkPSJNNTEyIDgwYzAgMTcuNy0xNC4zIDMyLTMyIDMySDMyYy0xNy43IDAtMzItMTQuMy0zMi0zMlMxNC4zIDQ4IDMyIDQ4aDQ0OGMxNy43IDAgMzIgMTQuMyAzMiAzMnpNNTEyIDE3NmMwIDE3LjctMTQuMyAzMi0zMiAzMkg5NmMtMTcuNyAwLTMyLTE0LjMtMzItMzJzMTQuMy0zMiAzMi0zMmgzODRjMTcuNyAwIDMyIDE0LjMgMzIgMzJ6TTUxMiAyNzJjMCAxNy43LTE0LjMgMzItMzIgMzJIMTYwYy0xNy43IDAtMzItMTQuMy0zMi0zMnMxNC4zLTMyIDMyLTMyaDMyMGMxNy43IDAgMzIgMTQuMyAzMiAzMnpNNTEyIDM2OGMwIDE3LjctMTQuMyAzMi0zMiAzMkgyMjRjLTE3LjcgMC0zMi0xNC4zLTMyLTMyIDE0LjMtMzIgMzItMzIgMzItMzJoMjU2YzE3LjcgMCAzMiAxNC4zIDMyIDMyeiIgZmlsbD0iIzg2YzljMSIvPjwvc3ZnPg==" alt="بطاقة">
+                    <h3>بطاقة</h3>
+                    <p>الدفع ببطاقة الائتمان/الخصم</p>
+                </div>
+                <div class="payment-method" data-method="qlick">
+                    <img src="https://www.jopacc.com/sites/default/files/2023-11/final_cliq_logo-02_1_0.png" alt="كليك" style="filter: invert(60%) sepia(20%) saturate(500%) hue-rotate(150deg) brightness(95%) contrast(90%);">
+                    <h3>كليك</h3>
+                    <p>الدفع عبر كليك</p>
+                </div>
+            </div>
+
+            <div id="cashPayment" class="payment-form" hidden>
+                <h3>الدفع النقدي</h3>
+                <p>يرجى إيداع المبلغ الصحيح: <span id="cashAmount">0.00 دينار</span></p>
+                <button id="confirmCashBtn">لقد أودعت النقود</button>
+            </div>
+
+            <div id="cardPayment" class="payment-form" hidden>
+                <h3>الدفع بالبطاقة</h3>
+                <div class="form-group">
+                    <label for="cardNumber">رقم البطاقة</label>
+                    <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456">
+                </div>
+                <div class="form-group">
+                    <label for="expiryDate">تاريخ الانتهاء</label>
+                    <input type="text" id="expiryDate" placeholder="MM/YY">
+                </div>
+                <div class="form-group">
+                    <label for="cvv">رمز التحقق CVV</label>
+                    <input type="text" id="cvv" placeholder="123">
+                </div>
+                <button id="confirmCardBtn">الدفع الآن</button>
+            </div>
+
+            <div id="qlickPayment" class="payment-form" hidden>
+                <h3>الدفع عبر كليك</h3>
+                <p>يرجى إرسال المبلغ إلى الرقم: <strong>00962776263295</strong></p>
+                <p>المبلغ المطلوب: <span id="qlickAmount">0.00 دينار</span></p>
+                <button id="confirmQlickBtn">لقد أرسلت المبلغ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Section as Popup -->
+    <div id="receiptSection" class="fullscreen-modal">
+        <div class="fullscreen-modal-header">
+            <h2>شكراً لتسوقك معنا!</h2>
+            <button class="modal-close" id="closeReceiptBtn">&times;</button>
+        </div>
+        <div class="fullscreen-modal-body">
+            <div class="receipt">
+                <div class="receipt-header">
+                    <h3>مكتبتي</h3>
+                    <p id="receiptNumber">رقم الإيصال #000123</p>
+                    <p id="receiptDate">التاريخ: 09 مارس 2025</p>
+                </div>
+                <div class="receipt-items" id="receiptItems">
+                    <!-- Receipt items will be inserted here -->
+                </div>
+                <div class="receipt-total">
+                    <span>المجموع:</span>
+                    <span id="receiptTotal">$0.00</span>
+                </div>
+                <div class="receipt-footer">
+                    <p>شكراً للتسوق معنا!</p>
+                </div>
+            </div>
+            <!-- Email Receipt Button/Pill -->
+            <div style="text-align: center; margin-top: 1rem;">
+                <div class="email-pill" id="emailReceiptPill">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
+                        <path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/>
+                    </svg>
+                    <span>إرسال إلى البريد الإلكتروني</span>
+                </div>
+            </div>
+        </div>
+        <div class="fullscreen-modal-footer">
+            <button id="newOrderBtn">بدء طلب جديد</button>
+        </div>
+    </div>
+
+    <!-- Admin Interface (as a Popup) -->
+    <div id="adminInterface" class="modal">
+        <div class="modal-content">
+            <div class="admin-panel">
+                <div class="admin-header">
+                    <h2>Admin Panel</h2>
+                    <button id="logoutBtn" class="modal-close">&times;</button>
+                </div>
+
+                <div class="admin-login" id="adminLogin">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="password">
+                    </div>
+                    <button id="loginBtn">Login</button>
+                </div>
+
+                <div id="adminContent" hidden>
+                    <div class="admin-actions">
+                        <button id="addProductButton" class="action-button">Add Product</button>
+                        <button id="importProductsButton" class="action-button">Import from Google Sheets</button>
+                    </div>
+
+                    <div id="productsTab" class="admin-panel-content active">
+                        <table class="product-list">
+                            <thead>
+                                <tr>
+                                    <th>Barcode</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsList">
+                                <!-- Products will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Product</h3>
+                <button class="modal-close" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <div class="form-group">
+                        <label for="editBarcode">Barcode</label>
+                        <div class="barcode-input-group">
+                            <input type="text" id="editBarcode">
+                            <button type="button" class="scan-barcode-btn" data-target="editBarcode">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-2zm4 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1z"/>
+                                </svg>
+                                Scan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editName">Product Name</label>
+                        <input type="text" id="editName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrice">Price ($)</label>
+                        <input type="number" id="editPrice" step="0.01" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="saveProductBtn">Save Changes</button>
+                <button id="cancelEditBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تأكيد العملية</h3>
+                <button class="modal-close" id="closeConfirmModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmYesBtn">نعم</button>
+                <button id="confirmNoBtn">لا</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Product</h3>
+                <button class="modal-close" id="closeAddProductModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm" class="product-form">
+                    <div class="form-group">
+                        <label for="productBarcode">Barcode</label>
+                        <div class="barcode-input-group">
+                            <input type="text" id="productBarcode" required>
+                            <button type="button" class="scan-barcode-btn" data-target="productBarcode">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-2zm4 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1zm2 0a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-1z"/>
+                                </svg>
+                                Scan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="productName">Product Name</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productPrice">Price ($)</label>
+                        <input type="number" id="productPrice" step="0.01" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="addProductBtn">Add Product</button>
+                <button type="button" id="cancelAddProductBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Products Modal -->
+    <div id="importProductsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Products from Google Sheets</h3>
+                <button class="modal-close" id="closeImportProductsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Import products from a Google Sheet. The sheet must be published to the web and contain the columns: <strong>barcode</strong>, <strong>name</strong>, and <strong>price</strong>.</p>
+                
+                <div class="form-group">
+                    <label for="googleSheetURL">Google Sheet CSV URL</label>
+                    <input type="text" id="googleSheetURL" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSj7shmkiADddrjm1qV7MFaFtIKEi4VQ6AyHDv89hDS3a7T8lQk8HprB7cXrsUON61DMvzmbuQjWXHZ/pub?output=csv" required>
+                </div>
+                
+                <div class="instructions">
+                    <h4>How to publish your Google Sheet:</h4>
+                    <ol>
+                        <li>Create a Google Sheet with columns: barcode, name, price</li>
+                        <li>Go to File > Share > Publish to the web</li>
+                        <li>Select the sheet with your data and format "Comma-separated values (.csv)"</li>
+                        <li>Click "Publish" and copy the link</li>
+                        <li>Paste the link above and click "Import Products"</li>
+                    </ol>
+                </div>
+                
+                <div id="importStatus" hidden></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="importProductsBtn">Import Products</button>
+                <button type="button" id="cancelImportProductsBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Modal for Admin -->
+    <div id="scannerModal" class="scanner-modal">
+        <div class="scanner-modal-content">
+            <div class="scanner-modal-header">
+                <h3>Scan Barcode</h3>
+                <button class="modal-close" id="closeScannerModal">&times;</button>
+            </div>
+            <div class="scanner-modal-body">
+                <div id="adminScannerViewport" class="scanner-viewport">
+                    <div class="scan-target-frame"></div>
+                </div>
+                <div id="adminScanFeedback" class="scan-instructions">
+                    Point camera at barcode
+                </div>
+                <button id="captureBarcodeBtn" class="scan-barcode-btn">Capture Barcode</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إرسال الإيصال عبر البريد الإلكتروني</h3>
+                <button class="modal-close" id="closeEmailModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>أدخل عنوان البريد الإلكتروني لاستلام الإيصال</p>
+                <div class="form-group">
+                    <input type="email" id="emailInput" placeholder="example@example.com" required>
+                </div>
+                <div id="emailStatus" class="email-status" hidden></div>
+            </div>
+            <div class="modal-footer">
+                <button id="sendEmailBtn">إرسال</button>
+                <button id="cancelEmailBtn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Google Sheet URL Constants
+            const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSj7shmkiADddrjm1qV7MFaFtIKEi4VQ6AyHDv89hDS3a7T8lQk8HprB7cXrsUON61DMvzmbuQjWXHZ/pub?output=csv';
+            let lastSyncTime = 0;
+            let syncInterval = null;
+            const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+            const SYNC_THROTTLE_MS = 10 * 1000; // 10 seconds minimum between syncs
+            
+            // DOM Elements
+            const adminInterface = document.getElementById('adminInterface');
+            const adminToggle = document.getElementById('adminToggle');
+            const adminLogin = document.getElementById('adminLogin');
+            const adminContent = document.getElementById('adminContent');
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const adminTabs = document.querySelectorAll('.admin-tab');
+            const scannerModal = document.getElementById('scannerModal');
+            const closeScannerModal = document.getElementById('closeScannerModal');
+            const adminScannerViewport = document.getElementById('adminScannerViewport');
+            const adminScanFeedback = document.getElementById('adminScanFeedback');
+            const captureBarcodeBtn = document.getElementById('captureBarcodeBtn');
+            
+            const addProductModal = document.getElementById('addProductModal');
+            const closeAddProductModal = document.getElementById('closeAddProductModal');
+            const cancelAddProductBtn = document.getElementById('cancelAddProductBtn');
+            
+            const importProductsModal = document.getElementById('importProductsModal');
+            const closeImportProductsModal = document.getElementById('closeImportProductsModal');
+            const cancelImportProductsBtn = document.getElementById('cancelImportProductsBtn');
+            
+            let currentBarcodeTarget = '';
+            let adminScannerActive = false;
+            
+            const scannerPlaceholder = document.getElementById('scannerPlaceholder');
+            const startScannerBtn = document.getElementById('startScannerBtn');
+            const interactiveEl = document.getElementById('interactive');
+            const scanFeedback = document.getElementById('scanFeedback');
+            
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            const totalAmount = document.getElementById('totalAmount');
+            const clearCartBtn = document.getElementById('clearCartBtn');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            
+            const checkoutSection = document.getElementById('checkoutSection');
+            const closeCheckoutBtn = document.getElementById('closeCheckoutBtn');
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            const cashPayment = document.getElementById('cashPayment');
+            const cardPayment = document.getElementById('cardPayment');
+            const qlickPayment = document.getElementById('qlickPayment');
+            const cashAmount = document.getElementById('cashAmount');
+            const qlickAmount = document.getElementById('qlickAmount');
+            const confirmCashBtn = document.getElementById('confirmCashBtn');
+            const confirmCardBtn = document.getElementById('confirmCardBtn');
+            const confirmQlickBtn = document.getElementById('confirmQlickBtn');
+            
+            const receiptSection = document.getElementById('receiptSection');
+            const closeReceiptBtn = document.getElementById('closeReceiptBtn');
+            const receiptItems = document.getElementById('receiptItems');
+            const receiptTotal = document.getElementById('receiptTotal');
+            const receiptNumber = document.getElementById('receiptNumber');
+            const receiptDate = document.getElementById('receiptDate');
+            const newOrderBtn = document.getElementById('newOrderBtn');
+            
+            // Email receipt elements
+            const emailReceiptPill = document.getElementById('emailReceiptPill');
+            const emailModal = document.getElementById('emailModal');
+            const closeEmailModal = document.getElementById('closeEmailModal');
+            const emailInput = document.getElementById('emailInput');
+            const sendEmailBtn = document.getElementById('sendEmailBtn');
+            const cancelEmailBtn = document.getElementById('cancelEmailBtn');
+            const emailStatus = document.getElementById('emailStatus');
+            
+            const productsList = document.getElementById('productsList');
+            const addProductForm = document.getElementById('addProductForm');
+            
+            const editProductModal = document.getElementById('editProductModal');
+            const editProductForm = document.getElementById('editProductForm');
+            const editBarcode = document.getElementById('editBarcode');
+            const editName = document.getElementById('editName');
+            const editPrice = document.getElementById('editPrice');
+            const saveProductBtn = document.getElementById('saveProductBtn');
+            const closeEditModal = document.getElementById('closeEditModal');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmYesBtn = document.getElementById('confirmYesBtn');
+            const confirmNoBtn = document.getElementById('confirmNoBtn');
+            const closeConfirmModal = document.getElementById('closeConfirmModal');
+            
+            // State variables
+            let products = JSON.parse(localStorage.getItem('products')) || [
+                { barcode: '9780201379624', name: 'حليب', price: 2.99 },
+                { barcode: '9780201379625', name: 'خبز', price: 1.99 },
+                { barcode: '9780201379626', name: 'بيض', price: 3.49 },
+                { barcode: '9780201379627', name: 'جبن', price: 4.99 },
+                { barcode: '9780201379628', name: 'حبوب الإفطار', price: 3.79 }
+            ];
+            
+            let cart = [];
+            let confirmAction = null;
+            let selectedPaymentMethod = null;
+            let scannerActive = false;
+            let scanCooldown = false; // Cooldown flag to prevent multiple scans
+            let currentReceiptHTML = ''; // Store the current receipt HTML for emailing
+
+            // Transaction Logger Object
+            const TransactionLogger = {
+                // Storage keys
+                TRANSACTIONS_KEY: 'storedTransactions',
+                
+                // Initialize the transaction storage
+                init: function() {
+                    if (!localStorage.getItem(this.TRANSACTIONS_KEY)) {
+                        localStorage.setItem(this.TRANSACTIONS_KEY, JSON.stringify([]));
+                    }
+                    this.setupAdminInterface();
+                },
+                
+                // Log a new transaction
+                logTransaction: function(transaction) {
+                    const transactions = this.getTransactions();
+                    transactions.push(transaction);
+                    localStorage.setItem(this.TRANSACTIONS_KEY, JSON.stringify(transactions));
+                    console.log('Transaction logged locally:', transaction);
+                    
+                    // Return true to indicate success
+                    return true;
+                },
+                
+                // Get all stored transactions
+                getTransactions: function() {
+                    return JSON.parse(localStorage.getItem(this.TRANSACTIONS_KEY) || '[]');
+                },
+                
+                // Clear all transactions
+                clearTransactions: function() {
+                    localStorage.setItem(this.TRANSACTIONS_KEY, JSON.stringify([]));
+                    console.log('All transactions cleared');
+                },
+                
+                // Convert transactions to CSV
+                transactionsToCSV: function() {
+                    const transactions = this.getTransactions();
+                    if (transactions.length === 0) {
+                        return null;
+                    }
+                    
+                    // CSV Header
+                    let csv = 'Timestamp,Receipt Number,Customer Name,Payment Method,Total Amount,Item Names,Item Barcodes,Item Quantities,Item Prices\n';
+                    
+                    // Add each transaction as a row
+                    transactions.forEach(t => {
+                        // Format items as separate columns
+                        const itemNames = t.items.map(item => item.name).join('; ');
+                        const itemBarcodes = t.items.map(item => item.barcode).join('; ');
+                        const itemQuantities = t.items.map(item => item.quantity).join('; ');
+                        const itemPrices = t.items.map(item => item.unitPrice).join('; ');
+                        
+                        // Create CSV row (handle commas in text fields)
+                        csv += `"${t.timestamp}","${t.receiptNumber}","${t.customerName || ''}","${t.paymentMethod}","${t.totalAmount}","${itemNames}","${itemBarcodes}","${itemQuantities}","${itemPrices}"\n`;
+                    });
+                    
+                    return csv;
+                },
+                
+                
+                // Download transactions as CSV
+                downloadTransactionsCSV: function() {
+                    const csv = this.transactionsToCSV();
+                    if (!csv) {
+                        alert('No transactions to export');
+                        return;
+                    }
+                    
+                    // Create download link
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    
+                    // Current date for filename
+                    const date = new Date();
+                    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    link.href = url;
+                    link.setAttribute('download', `transactions-${formattedDate}.csv`);
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+                
+                // Add interface to admin panel
+                setupAdminInterface: function() {
+                    const setupAdminControls = () => {
+                        const adminActions = document.querySelector('.admin-actions');
+                        if (!adminActions) return;
+                        
+                        // Remove existing buttons if any
+                        const existingExportButton = document.getElementById('exportTransactionsBtn');
+                        if (existingExportButton) {
+                            existingExportButton.remove();
+                        }
+                        
+                        // Also remove existing clear button if any
+                        const existingClearButton = document.getElementById('clearTransactionsBtn');
+                        if (existingClearButton) {
+                            existingClearButton.remove();
+                        }
+                        
+                        // Add transaction count
+                        const transactionCount = this.getTransactions().length;
+                        
+                        // Create export button
+                        const exportButton = document.createElement('button');
+                        exportButton.id = 'exportTransactionsBtn';
+                        exportButton.className = 'action-button';
+                        exportButton.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style="margin-right: 5px;" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            Export Transactions (${transactionCount})
+                        `;
+                        exportButton.addEventListener('click', () => this.downloadTransactionsCSV());
+                        adminActions.appendChild(exportButton);
+                        
+                        // Add clear transactions button if there are transactions
+                        if (transactionCount > 0) {
+                            const clearButton = document.createElement('button');
+                            clearButton.id = 'clearTransactionsBtn';
+                            clearButton.className = 'action-button';
+                            clearButton.style.backgroundColor = '#dc3545';
+                            clearButton.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style="margin-right: 5px;" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                                Clear Stored Transactions
+                            `;
+                            clearButton.addEventListener('click', () => {
+                                if (confirm('Are you sure you want to delete all stored transactions? This cannot be undone.')) {
+                                    this.clearTransactions();
+                                    this.setupAdminInterface(); // Refresh buttons
+                                }
+                            });
+                            adminActions.appendChild(clearButton);
+                        }
+                    };
+                    
+                    // Try to set up admin controls now
+                    setupAdminControls();
+                    
+                    // Also set up when admin panel is opened
+                    const adminToggle = document.getElementById('adminToggle');
+                    if (adminToggle) {
+                        adminToggle.addEventListener('click', () => {
+                            // Wait for panel to open
+                            setTimeout(setupAdminControls, 100);
+                        });
+                    }
+                    
+                    // Also set up when admin login is successful
+                    const loginBtn = document.getElementById('loginBtn');
+                    if (loginBtn) {
+                        loginBtn.addEventListener('click', () => {
+                            // Wait for login process
+                            setTimeout(setupAdminControls, 500);
+                        });
+                    }
+                }
+            };
+            
+            // Initialize the application
+            init();
+            
+            function init() {
+                // Save products to localStorage if not already there
+                if (!localStorage.getItem('products')) {
+                    localStorage.setItem('products', JSON.stringify(products));
+                }
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Automatically fetch products from Google Sheet on page load
+                fetchProductsFromSheet();
+                
+                // Set up regular synchronization
+                startAutoSync();
+                
+                // Initialize transaction logger
+                setTimeout(() => {
+                    TransactionLogger.init();
+                }, 1000);
+            }
+
+            function logTransactionToSheet() {
+                try {
+                    // Format transaction data
+                    const now = new Date();
+                    const timestamp = now.toISOString();
+                    const paymentMethod = selectedPaymentMethod || 'unknown';
+                    const receiptId = receiptNumber.textContent.replace('رقم الإيصال #', '');
+                    
+                    // Create transaction object with cleaner item structure
+                    const transaction = {
+                        timestamp: timestamp,
+                        receiptNumber: receiptId,
+                        customerName: "", // Can be blank or filled from a form
+                        paymentMethod: paymentMethod,
+                        items: cart.map(item => ({
+                            name: item.name,
+                            barcode: item.barcode,
+                            quantity: item.quantity,
+                            unitPrice: item.price,
+                            totalAmount: (item.price * item.quantity).toFixed(2)
+                        })),
+                        totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)
+                    };
+                    
+                    // Log to local storage
+                    TransactionLogger.logTransaction(transaction);
+                    
+                    // Show success message
+                    const notification = document.createElement('div');
+                    notification.className = 'sync-notification';
+                    notification.textContent = 'تم تسجيل المعاملة بنجاح';
+                    notification.style.position = 'fixed';
+                    notification.style.bottom = '20px';
+                    notification.style.right = '20px';
+                    notification.style.backgroundColor = 'var(--success-color)';
+                    notification.style.color = 'white';
+                    notification.style.padding = '10px 15px';
+                    notification.style.borderRadius = 'var(--border-radius)';
+                    notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                    notification.style.zIndex = '9999';
+                    document.body.appendChild(notification);
+                    
+                    // Remove notification after 3 seconds
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => notification.remove(), 500);
+                    }, 3000);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error in transaction logging:', error);
+                    return true; // Return true so checkout can complete
+                }
+            }
+
+            function startAutoSync() {
+                // Clear any existing interval
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                }
+                
+                // Set up new interval
+                syncInterval = setInterval(fetchProductsFromSheet, SYNC_INTERVAL_MS);
+                
+                // Log that sync has started
+                console.log('Auto-sync started. Products will refresh every', SYNC_INTERVAL_MS / 60000, 'minutes');
+            }
+            
+            function setupEventListeners() {
+                // Scanner events
+                startScannerBtn.addEventListener('click', initScanner);
+                
+                // Manual/Scanner toggle
+                const scanToggleBtn = document.getElementById('scanToggleBtn');
+                const manualToggleBtn = document.getElementById('manualToggleBtn');
+                const scannerView = document.getElementById('scannerView');
+                const manualView = document.getElementById('manualView');
+                
+                scanToggleBtn.addEventListener('click', () => {
+                    scanToggleBtn.classList.add('active');
+                    manualToggleBtn.classList.remove('active');
+                    scannerView.hidden = false;
+                    manualView.hidden = true;
+                });
+                
+                manualToggleBtn.addEventListener('click', () => {
+                    manualToggleBtn.classList.add('active');
+                    scanToggleBtn.classList.remove('active');
+                    manualView.hidden = false;
+                    scannerView.hidden = true;
+                    
+                    // Load product grid if empty
+                    if (!document.getElementById('productsGrid').children.length) {
+                        renderProductGrid();
+                    }
+                    
+                    // Stop the scanner when switching to manual view
+                    if (scannerActive) {
+                        stopScanner();
+                    }
+                });
+                
+                // Product search functionality
+                const productSearchInput = document.getElementById('productSearchInput');
+                productSearchInput.addEventListener('input', () => {
+                    renderProductGrid(productSearchInput.value.trim().toLowerCase());
+                });
+                
+                // Admin panel events
+                adminToggle.addEventListener('click', function() {
+                    adminInterface.style.display = 'flex';
+                    if (!adminInterface.hidden) {
+                        // When admin panel is opened, add the sync button
+                        setTimeout(setupAdminSyncButton, 100);
+                    }
+                });
+                
+                loginBtn.addEventListener('click', handleAdminLogin);
+                logoutBtn.addEventListener('click', () => {
+                    adminInterface.style.display = 'none';
+                });
+                
+                // Admin action buttons
+                document.getElementById('addProductButton').addEventListener('click', () => {
+                    // Clear form
+                    document.getElementById('productBarcode').value = '';
+                    document.getElementById('productName').value = '';
+                    document.getElementById('productPrice').value = '';
+                    
+                    // Show modal
+                    addProductModal.style.display = 'flex';
+                });
+                
+                document.getElementById('importProductsButton').addEventListener('click', () => {
+                    // Set default Google Sheet URL
+                    document.getElementById('googleSheetURL').value = GOOGLE_SHEET_URL;
+                    document.getElementById('importStatus').hidden = true;
+                    
+                    // Show modal
+                    importProductsModal.style.display = 'flex';
+                });
+                
+                // Modal close buttons
+                closeAddProductModal.addEventListener('click', () => closeModal(addProductModal));
+                cancelAddProductBtn.addEventListener('click', () => closeModal(addProductModal));
+                
+                closeImportProductsModal.addEventListener('click', () => closeModal(importProductsModal));
+                cancelImportProductsBtn.addEventListener('click', () => closeModal(importProductsModal));
+                
+                // Checkout popup close
+                closeCheckoutBtn.addEventListener('click', () => {
+                    checkoutSection.style.display = 'none';
+                });
+                
+                // Receipt popup close
+                closeReceiptBtn.addEventListener('click', () => {
+                    receiptSection.style.display = 'none';
+                    startNewOrder();
+                });
+                
+                // Product management
+                document.getElementById('addProductBtn').addEventListener('click', handleAddProduct);
+                
+                // Import products from Google Sheets
+                document.getElementById('importProductsBtn').addEventListener('click', importProductsFromSheet);
+                saveProductBtn.addEventListener('click', handleSaveProduct);
+                closeEditModal.addEventListener('click', closeModal.bind(null, editProductModal));
+                cancelEditBtn.addEventListener('click', closeModal.bind(null, editProductModal));
+                
+                // Confirmation modal
+                confirmYesBtn.addEventListener('click', handleConfirmYes);
+                confirmNoBtn.addEventListener('click', handleConfirmNo);
+                closeConfirmModal.addEventListener('click', closeModal.bind(null, confirmModal));
+                
+                // Barcode scanning for product forms
+                document.querySelectorAll('.scan-barcode-btn').forEach(btn => {
+                    btn.addEventListener('click', openBarcodeScannerModal);
+                });
+                
+                // Scanner modal
+                closeScannerModal.addEventListener('click', closeScannerModalHandler);
+                captureBarcodeBtn.addEventListener('click', captureBarcode);
+                
+                // Cart events
+                clearCartBtn.addEventListener('click', showConfirmModal.bind(null, 'هل أنت متأكد من رغبتك في تفريغ السلة؟', clearCart));
+                checkoutBtn.addEventListener('click', showCheckout);
+                
+                // Checkout events
+                paymentMethods.forEach(method => {
+                    method.addEventListener('click', selectPaymentMethod);
+                });
+                confirmCashBtn.addEventListener('click', processPayment);
+                confirmCardBtn.addEventListener('click', processPayment);
+                if (confirmQlickBtn) {
+                    confirmQlickBtn.addEventListener('click', processPayment);
+                }
+                
+                // Receipt events
+                newOrderBtn.addEventListener('click', startNewOrder);
+                
+                // Email receipt events
+                emailReceiptPill.addEventListener('click', showEmailModal);
+                closeEmailModal.addEventListener('click', closeModal.bind(null, emailModal));
+                cancelEmailBtn.addEventListener('click', closeModal.bind(null, emailModal));
+                sendEmailBtn.addEventListener('click', sendReceiptByEmail);
+            }
+
+            // Add admin sync button to the admin panel
+            function setupAdminSyncButton() {
+                const adminActions = document.querySelector('.admin-actions');
+                if (adminActions) {
+                    // Check if button already exists
+                    if (!document.getElementById('syncProductsButton')) {
+                        const syncButton = document.createElement('button');
+                        syncButton.id = 'syncProductsButton';
+                        syncButton.className = 'action-button';
+                        syncButton.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style="margin-right: 5px;" viewBox="0 0 16 16">
+                                <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                            </svg>
+                            Sync with Google Sheet
+                        `;
+                        syncButton.addEventListener('click', fetchProductsFromSheet);
+                        adminActions.appendChild(syncButton);
+                    }
+                    
+                    // Add or update sync status display
+                    updateSyncStatus();
+                }
+            }
+
+            // Function to update the sync status display in the admin panel
+            function updateSyncStatus(status = 'idle') {
+                const adminContent = document.getElementById('adminContent');
+                if (!adminContent) return;
+                
+                let statusEl = document.querySelector('.sync-status');
+                if (!statusEl) {
+                    statusEl = document.createElement('div');
+                    statusEl.className = 'sync-status';
+                    const adminActions = adminContent.querySelector('.admin-actions');
+                    if (adminActions) {
+                        adminActions.after(statusEl);
+                    }
+                }
+                
+                const lastSyncDate = new Date(lastSyncTime);
+                const formattedDate = lastSyncTime ? 
+                    `${lastSyncDate.toLocaleDateString()} ${lastSyncDate.toLocaleTimeString()}` : 
+                    'Never';
+                
+                if (status === 'syncing') {
+                    statusEl.innerHTML = `
+                        <span class="sync-spinner"></span>
+                        <span>Syncing with Google Sheet...</span>
+                    `;
+                    statusEl.className = 'sync-status syncing';
+                } else {
+                    statusEl.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                        </svg>
+                        <span>Last sync: ${formattedDate}</span>
+                    `;
+                    statusEl.className = 'sync-status';
+                }
+            }
+            
+            async function fetchProductsFromSheet() {
+                // Check if we're throttling
+                const now = Date.now();
+                if (now - lastSyncTime < SYNC_THROTTLE_MS) {
+                    console.log('Sync throttled. Try again later.');
+                    return;
+                }
+                
+                // Update the sync status to show we're syncing
+                updateSyncStatus('syncing');
+                
+                lastSyncTime = now;
+                console.log('Syncing products from Google Sheet...');
+                
+                try {
+                    // Use the Google Sheet URL from the constant
+                    const googleSheetURL = document.getElementById('googleSheetURL')?.value || GOOGLE_SHEET_URL;
+                    
+                    const response = await fetch(googleSheetURL, {
+                        // Add cache busting to prevent caching
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const csvData = await response.text();
+                    const parsedData = parseCSV(csvData);
+                    
+                    // Validate that the required columns exist
+                    const requiredColumns = ['barcode', 'name', 'price'];
+                    const firstRow = parsedData[0] || {};
+                    const missingColumns = requiredColumns.filter(col => 
+                        !Object.keys(firstRow).includes(col)
+                    );
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+                    }
+                    
+                    // Transform the data to our products format
+                    const newProducts = parsedData
+                        .filter(item => item.barcode && item.name) // Filter out empty rows
+                        .map(item => ({
+                            barcode: item.barcode,
+                            name: item.name,
+                            price: parseFloat(item.price) || 0
+                        }));
+                    
+                    if (newProducts.length === 0) {
+                        console.warn('No valid products found in the sheet');
+                        return;
+                    }
+                    
+                    // Save to localStorage
+                    products = newProducts;
+                    localStorage.setItem('products', JSON.stringify(products));
+                    
+                    // Update products list if admin panel is open
+                    if (adminInterface.style.display === 'flex' && adminContent && !adminContent.hidden) {
+                        updateProductsList();
+                    }
+                    
+                    // Update UI feedback if import modal is open
+                    const importStatus = document.getElementById('importStatus');
+                    if (importStatus && !importStatus.hidden) {
+                        showImportStatus(`Successfully synced ${products.length} products`, 'success');
+                    }
+                    
+                    console.log(`Successfully synced ${products.length} products from Google Sheet`);
+                    
+                    // Update sync status to show we're done
+                    updateSyncStatus();
+                    
+                    // Display a notification if the product data was actually changed
+                    const syncNotification = document.createElement('div');
+                    syncNotification.className = 'sync-notification';
+                    syncNotification.textContent = `✓ Products synchronized: ${products.length} items updated`;
+                    syncNotification.style.position = 'fixed';
+                    syncNotification.style.bottom = '20px';
+                    syncNotification.style.right = '20px';
+                    syncNotification.style.backgroundColor = 'var(--accent)';
+                    syncNotification.style.color = 'white';
+                    syncNotification.style.padding = '10px 15px';
+                    syncNotification.style.borderRadius = 'var(--border-radius)';
+                    syncNotification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                    syncNotification.style.zIndex = '9999';
+                    document.body.appendChild(syncNotification);
+                    
+                    // Remove the notification after 3 seconds
+                    setTimeout(() => {
+                        syncNotification.style.opacity = '0';
+                        syncNotification.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => syncNotification.remove(), 500);
+                    }, 3000);
+                    
+                } catch (error) {
+                    console.error('Product sync error:', error);
+                    
+                    // Update sync status to show error
+                    updateSyncStatus();
+                    
+                    // Update UI feedback if import modal is open
+                    const importStatus = document.getElementById('importStatus');
+                    if (importStatus && !importStatus.hidden) {
+                        showImportStatus(`Error syncing products: ${error.message}`, 'error');
+                    }
+                    
+                    // Show error notification
+                    const errorNotification = document.createElement('div');
+                    errorNotification.className = 'sync-notification';
+                    errorNotification.textContent = `⚠️ Sync error: ${error.message}`;
+                    errorNotification.style.position = 'fixed';
+                    errorNotification.style.bottom = '20px';
+                    errorNotification.style.right = '20px';
+                    errorNotification.style.backgroundColor = 'var(--error-color)';
+                    errorNotification.style.color = 'white';
+                    errorNotification.style.padding = '10px 15px';
+                    errorNotification.style.borderRadius = 'var(--border-radius)';
+                    errorNotification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                    errorNotification.style.zIndex = '9999';
+                    document.body.appendChild(errorNotification);
+                    
+                    // Remove the notification after 5 seconds
+                    setTimeout(() => {
+                        errorNotification.style.opacity = '0';
+                        errorNotification.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => errorNotification.remove(), 500);
+                    }, 5000);
+                }
+            }
+            
+            /**
+             * Generate a vibrant background color
+             * @returns {string} - CSS color string
+             */
+            function generateRandomColor() {
+                // Predefined pleasing colors with good saturation
+                const colors = [
+                    '#FF6B6B', // Red
+                    '#4ECDC4', // Teal
+                    '#FF9F1C', // Orange
+                    '#2EC4B6', // Turquoise
+                    '#E71D36', // Bright Red
+                    '#FF9F1C', // Amber
+                    '#6A0572', // Purple
+                    '#AB83A1', // Mauve
+                    '#5C80BC', // Blue
+                    '#6B818C', // Slate
+                    '#20A4F3', // Light Blue
+                    '#8FC93A', // Lime Green
+                    '#0E79B2', // Deep Blue
+                    '#BF1363', // Magenta
+                    '#F39237', // Light Orange
+                    '#D81159', // Hot Pink
+                    '#8F2D56', // Burgundy
+                    '#218380', // Dark Teal
+                    '#73D2DE', // Sky Blue
+                    '#FFC857', // Yellow
+                    '#BEEE62', // Light Green
+                    '#F76F8E', // Salmon
+                    '#5299D3', // Royal Blue
+                    '#099C95', // Jade
+                    '#38686A', // Forest
+                    '#A37871', // Dusty Rose
+                    '#BD93BD', // Lavender
+                    '#FFA69E', // Peach
+                    '#9B5DE5', // Medium Purple
+                    '#006494', // Navy
+                    '#118AB2', // Azure
+                ];
+                
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            /**
+             * Determine if text should be white or black based on background color
+             * @param {string} backgroundColor - CSS color string
+             * @returns {string} - 'white' or 'black'
+             */
+            function getTextColorForBackground(backgroundColor) {
+                // Convert hex to RGB
+                let hex = backgroundColor.replace('#', '');
+                let r = parseInt(hex.substr(0, 2), 16);
+                let g = parseInt(hex.substr(2, 2), 16);
+                let b = parseInt(hex.substr(4, 2), 16);
+                
+                // Calculate luminance (perceived brightness)
+                // Formula: (0.299*R + 0.587*G + 0.114*B)
+                let luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                
+                // Use white text for dark backgrounds, black for light
+                return luminance > 0.5 ? 'black' : 'white';
+            }
+            
+            /**
+             * Render product grid for manual selection
+             * @param {string} searchTerm - Optional search term to filter products
+             */
+            function renderProductGrid(searchTerm = '') {
+                const productsGrid = document.getElementById('productsGrid');
+                const productCount = document.getElementById('productCount');
+                productsGrid.innerHTML = '';
+                
+                // Filter products by search term if provided
+                const filteredProducts = searchTerm
+                    ? products.filter(p => 
+                        p.name.toLowerCase().includes(searchTerm) || 
+                        p.barcode.toLowerCase().includes(searchTerm))
+                    : products;
+                
+                // Update product count
+                productCount.textContent = filteredProducts.length;
+                
+                if (filteredProducts.length === 0) {
+                    productsGrid.innerHTML = `
+                        <div class="no-products-found">
+                            <p>لا توجد منتجات تطابق بحثك</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create product blocks
+                filteredProducts.forEach(product => {
+                    const backgroundColor = generateRandomColor();
+                    const textColor = getTextColorForBackground(backgroundColor);
+                    
+                    const productBlock = document.createElement('div');
+                    productBlock.className = 'product-block';
+                    productBlock.dataset.barcode = product.barcode;
+                    productBlock.style.backgroundColor = backgroundColor;
+                    productBlock.style.color = textColor;
+                    
+                    productBlock.innerHTML = `
+                        <div class="product-block-name">${product.name}</div>
+                        <div class="product-block-price">${product.price.toFixed(2)} دينار</div>
+                    `;
+                    
+                    // Add click event to add to cart
+                    productBlock.addEventListener('click', () => {
+                        addToCart(product);
+                        
+                        // Visual feedback
+                        const originalColor = productBlock.style.backgroundColor;
+                        productBlock.style.backgroundColor = textColor === 'white' ? '#ffffff' : '#000000';
+                        productBlock.style.color = textColor === 'white' ? '#000000' : '#ffffff';
+                        
+                        setTimeout(() => {
+                            productBlock.style.backgroundColor = originalColor;
+                            productBlock.style.color = textColor;
+                        }, 200);
+                    });
+                    
+                    productsGrid.appendChild(productBlock);
+                });
+            }
+            
+            function initScanner() {
+                if (scannerActive) return;
+                
+                scannerPlaceholder.hidden = true;
+                interactiveEl.hidden = false;
+                scanFeedback.textContent = 'جارِ تهيئة الماسح الضوئي...';
+                scanFeedback.innerHTML = 'ضع الباركود في وسط الإطار <br><strong>أبقِه ثابتًا للحصول على أفضل النتائج</strong>';
+                
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: interactiveEl,
+                        constraints: {
+                            width: { min: 1024, ideal: 1280, max: 1920 },
+                            height: { min: 576, ideal: 720, max: 1080 },
+                            aspectRatio: { min: 1, max: 2 },
+                            facingMode: "environment" // Use the rear camera on mobile devices
+                        },
+                        area: { // Define scan area - center of the view
+                            top: "30%",    // top offset
+                            right: "15%",  // right offset
+                            left: "15%",   // left offset
+                            bottom: "30%"  // bottom offset
+                        }
+                    },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 4,
+                    frequency: 10,
+                    decoder: {
+                        readers: [
+                            "ean_reader",
+                            "ean_8_reader", 
+                            "code_128_reader",
+                            "code_39_reader",
+                            "code_93_reader",
+                            "upc_reader",
+                            "upc_e_reader"
+                        ],
+                        debug: {
+                            showCanvas: true,
+                            showPatches: true,
+                            showFoundPatches: true,
+                            showSkeleton: true,
+                            showLabels: true,
+                            showPatchLabels: true,
+                            showRemainingPatchLabels: true
+                        }
+                    },
+                    locate: true,
+                    multiple: false
+                }, function(err) {
+                    if (err) {
+                        scanFeedback.textContent = 'فشل تهيئة الماسح الضوئي: ' + err;
+                        interactiveEl.hidden = true;
+                        scannerPlaceholder.hidden = false;
+                        return;
+                    }
+                    
+                    scanFeedback.textContent = 'الماسح جاهز. وجّه الكاميرا نحو الباركود.';
+                    scannerActive = true;
+                    Quagga.start();
+                });
+                
+                // Add detection event
+                Quagga.onDetected(function(result) {
+                    // If we're in cooldown period, ignore this detection
+                    if (scanCooldown) return;
+                    
+                    // Check if the result is trustworthy
+                    if (result.codeResult.startInfo.error > 0.1) {
+                        // Too much error, ignore this scan
+                        return;
+                    }
+                    
+                    let code = result.codeResult.code;
+                    scanFeedback.innerHTML = '<strong>تم اكتشاف الباركود:</strong> ' + code;
+                    
+                    // Highlight scan frame to give visual feedback
+                    const scanFrameEl = document.getElementById('scanFrame');
+                    scanFrameEl.style.border = '2px solid #4CAF50';
+                    scanFrameEl.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.5)';
+                    
+                    // Reset the highlight after a short period
+                    setTimeout(() => {
+                        scanFrameEl.style.border = '2px dashed rgba(255, 255, 255, 0.5)';
+                        scanFrameEl.style.boxShadow = '0 0 0 1000px rgba(0, 0, 0, 0.4)';
+                    }, 1000);
+                    
+                    // Beep sound
+                    beep();
+                    
+                    // Find the product
+                    let product = products.find(p => p.barcode === code);
+                    
+                    if (product) {
+                        // Add to cart
+                        addToCart(product);
+                        // Feedback
+                        scanFeedback.innerHTML = `<strong>تمت إضافة ${product.name} إلى السلة!</strong><br>استمر في المسح أو عدّل السلة أدناه`;
+                    } else {
+                        scanFeedback.innerHTML = '<strong style="color: #ff6b6b;">المنتج غير موجود</strong><br>الباركود: ' + code;
+                    }
+                    
+                    // Set cooldown to prevent multiple scans of the same item
+                    scanCooldown = true;
+                    setTimeout(() => {
+                        scanCooldown = false;
+                        scanFeedback.innerHTML = 'جاهز لمسح العنصر التالي...';
+                    }, 2000);
+                    
+                    // Don't stop scanner after successful scan, keep it running
+                });
+                
+                // Add processing event for more responsive UI feedback
+                Quagga.onProcessed(function(result) {
+                    const drawingCtx = Quagga.canvas.ctx.overlay;
+                    const drawingCanvas = Quagga.canvas.dom.overlay;
+                    
+                    if (result) {
+                        if (result.boxes) {
+                            drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                            result.boxes.filter(function(box) {
+                                return box !== result.box;
+                            }).forEach(function(box) {
+                                Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "yellow", lineWidth: 2 });
+                            });
+                        }
+                        
+                        if (result.box) {
+                            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                        }
+                        
+                        if (result.codeResult && result.codeResult.code) {
+                            Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                        }
+                    }
+                });
+            }
+
+            function stopScanner() {
+                if (!scannerActive) return;
+                Quagga.stop();
+                scannerActive = false;
+                interactiveEl.hidden = true;
+                scannerPlaceholder.hidden = false;
+            }
+            
+            /**
+             * Parse CSV data to an array of objects
+             * @param {string} csv - CSV data as string
+             * @returns {Array} - Array of objects with column names as keys
+             */
+            function parseCSV(csv) {
+                const lines = csv.trim().split('\n');
+                const headers = lines[0].split(',').map(header => header.trim().toLowerCase());
+                
+                return lines.slice(1).map(line => {
+                    const values = line.split(',').map(value => value.trim());
+                    const obj = {};
+                    
+                    headers.forEach((header, i) => {
+                        obj[header] = values[i] || '';
+                    });
+                    
+                    return obj;
+                });
+            }
+            
+            /**
+             * Import products from Google Sheets (using the manual import button)
+             */
+            async function importProductsFromSheet() {
+                const googleSheetURL = document.getElementById('googleSheetURL').value.trim();
+                const importStatus = document.getElementById('importStatus');
+                
+                if (!googleSheetURL) {
+                    showImportStatus('Please enter a valid Google Sheet URL', 'error');
+                    return;
+                }
+                
+                // Simple check for a valid Google Sheets URL
+                if (!googleSheetURL.includes('google.com/spreadsheets') && !googleSheetURL.includes('output=csv')) {
+                    showImportStatus('Please enter a valid Google Sheet URL published as CSV', 'error');
+                    return;
+                }
+                
+                showImportStatus('Importing products...', 'loading');
+
+                try {
+                    const response = await fetch(googleSheetURL, {
+                        // Add cache busting to prevent caching
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const csvData = await response.text();
+                    const parsedData = parseCSV(csvData);
+                    
+                    // Validate that the required columns exist
+                    const requiredColumns = ['barcode', 'name', 'price'];
+                    const missingColumns = requiredColumns.filter(col => 
+                        !parsedData[0] || !Object.keys(parsedData[0]).includes(col)
+                    );
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+                    }
+                    
+                    // Transform the data to our products format
+                    products = parsedData.map(item => ({
+                        barcode: item.barcode,
+                        name: item.name,
+                        price: parseFloat(item.price) || 0
+                    })).filter(p => p.barcode && p.name); // Filter out empty rows
+                    
+                    // Save to localStorage
+                    localStorage.setItem('products', JSON.stringify(products));
+                    
+                    // Update products list
+                    updateProductsList();
+                    
+                    // Update last sync time
+                    lastSyncTime = Date.now();
+                    updateSyncStatus();
+                    
+                    showImportStatus(`Successfully imported ${products.length} products`, 'success');
+                    
+                    // Close the import modal after a delay
+                    setTimeout(() => {
+                        closeModal(importProductsModal);
+                    }, 1500);
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showImportStatus(`Error importing products: ${error.message}`, 'error');
+                }
+            }
+            
+            /**
+             * Show import status message
+             * @param {string} message - Message to display
+             * @param {string} type - Message type (success, error, loading)
+             */
+            function showImportStatus(message, type) {
+                const importStatus = document.getElementById('importStatus');
+                
+                importStatus.textContent = message;
+                importStatus.className = '';
+                importStatus.classList.add(type);
+                
+                if (type === 'loading') {
+                    importStatus.innerHTML = `
+                        <div class="loading" style="display: inline-block; margin-right: 10px;"></div>
+                        ${message}
+                    `;
+                }
+                
+                importStatus.hidden = false;
+            }
+            
+            function beep() {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                gainNode.gain.value = 0.1;
+                oscillator.frequency.value = 800;
+                oscillator.type = 'square';
+                
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 200);
+            }
+            
+            function addToCart(product) {
+                // Check if product is already in cart
+                const existingItem = cart.find(item => item.barcode === product.barcode);
+                
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({
+                        barcode: product.barcode,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1
+                    });
+                }
+                
+                updateCart();
+            }
+            
+            function updateCart() {
+                if (cart.length === 0) {
+                    cartItems.innerHTML = '<div class="empty-cart">سلة التسوق فارغة. ابدأ بمسح المنتجات!</div>';
+                    cartTotal.hidden = true;
+                    checkoutBtn.hidden = true;
+                    return;
+                }
+                
+                let html = '';
+                let total = 0;
+                
+                cart.forEach((item, index) => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    
+                    html += `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <div class="cart-item-name">${item.name}</div>
+                                <div class="cart-item-price">${item.price.toFixed(2)} دينار</div>
+                            </div>
+                            <div class="cart-item-actions">
+                                <div class="cart-item-quantity">
+                                    <button class="quantity-btn decrease-btn" data-index="${index}">-</button>
+                                    <span>${item.quantity}</span>
+                                    <button class="quantity-btn increase-btn" data-index="${index}">+</button>
+                                </div>
+                                <button class="remove-btn" data-index="${index}">إزالة</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                cartItems.innerHTML = html;
+                totalAmount.textContent = total.toFixed(2) + ' دينار';
+                cashAmount.textContent = total.toFixed(2) + ' دينار';
+                if (qlickAmount) {
+                  qlickAmount.textContent = total.toFixed(2) + ' دينار';
+                }
+                cartTotal.hidden = false;
+                checkoutBtn.hidden = false;
+                
+                // Add event listeners to quantity and remove buttons
+                document.querySelectorAll('.increase-btn').forEach(btn => {
+                    btn.addEventListener('click', increaseQuantity);
+                });
+                
+                document.querySelectorAll('.decrease-btn').forEach(btn => {
+                    btn.addEventListener('click', decreaseQuantity);
+                });
+                
+                document.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', removeCartItem);
+                });
+            }
+            
+            function increaseQuantity(event) {
+                const index = parseInt(event.target.dataset.index);
+                cart[index].quantity += 1;
+                updateCart();
+            }
+            
+            function decreaseQuantity(event) {
+                const index = parseInt(event.target.dataset.index);
+                if (cart[index].quantity > 1) {
+                    cart[index].quantity -= 1;
+                    updateCart();
+                }
+            }
+            
+            function removeCartItem(event) {
+                const index = parseInt(event.target.dataset.index);
+                cart.splice(index, 1);
+                updateCart();
+            }
+            
+            function clearCart() {
+                cart = [];
+                updateCart();
+            }
+            
+            function showCheckout() {
+                checkoutSection.style.display = 'flex';
+            }
+            
+            function selectPaymentMethod(event) {
+                const method = event.currentTarget.dataset.method;
+                selectedPaymentMethod = method;
+                
+                // Update UI
+                paymentMethods.forEach(m => m.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+                
+                // Show appropriate payment form
+                cashPayment.hidden = method !== 'cash';
+                cardPayment.hidden = method !== 'card';
+                if (qlickPayment) {
+                    qlickPayment.hidden = method !== 'qlick';
+                }
+            }
+            
+            function processPayment() {
+                // Log the transaction using our new offline method
+                logTransactionToSheet();
+                
+                // For simplicity, we'll just generate a receipt
+                generateReceipt();
+
+                // Hide checkout, show receipt
+                checkoutSection.style.display = 'none';
+                receiptSection.style.display = 'flex';
+            }
+            
+            function generateReceipt() {
+                // Generate random receipt number
+                const receiptId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+                receiptNumber.textContent = `رقم الإيصال #${receiptId}`;
+                
+                // Set date
+                const now = new Date();
+                const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+                receiptDate.textContent = `التاريخ: ${now.toLocaleDateString('ar-AE', dateOptions)}`;
+                
+                // Clear previous items
+                receiptItems.innerHTML = '';
+                
+                // Add items to receipt
+                let total = 0;
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'receipt-item';
+                    itemEl.innerHTML = `
+                        <span>${item.name} x ${item.quantity}</span>
+                        <span>${itemTotal.toFixed(2)} دينار</span>
+                    `;
+                    receiptItems.appendChild(itemEl);
+                });
+                
+                // Set total
+                receiptTotal.textContent = `${total.toFixed(2)} دينار`;
+                
+                // Store the current receipt HTML for emailing
+                const receiptElement = document.querySelector('.receipt');
+                currentReceiptHTML = receiptElement.outerHTML;
+            }
+            
+            /**
+             * Show the email modal for sending receipt
+             */
+            function showEmailModal() {
+                // Clear previous email and status
+                emailInput.value = '';
+                emailStatus.hidden = true;
+                
+                // Show modal
+                emailModal.style.display = 'flex';
+            }
+            
+            /**
+             * Send receipt to email using EmailJS
+             */
+            function sendReceiptByEmail() {
+                const email = emailInput.value.trim();
+                
+                if (!email || !validateEmail(email)) {
+                    showEmailStatus('الرجاء إدخال عنوان بريد إلكتروني صحيح', 'error');
+                    return;
+                }
+                
+                showEmailStatus('جارٍ إرسال الإيصال...', 'loading');
+                
+                // Get receipt info
+                const receiptId = receiptNumber.textContent.replace('رقم الإيصال #', '');
+                const receiptDateText = receiptDate.textContent;
+                const totalAmount = receiptTotal.textContent;
+                
+                // Format cart items for email
+                let itemsText = '';
+                cart.forEach(item => {
+                    itemsText += `${item.name} x ${item.quantity} - ${(item.price * item.quantity).toFixed(2)} دينار\n`;
+                });
+                
+                // Send email using EmailJS
+                emailjs.send(
+                    'service_jm8805r', // Create this in EmailJS dashboard
+                    'template_860c1pw', // Create this in EmailJS dashboard
+                    {
+                        to_email: email,
+                        receipt_number: receiptId,
+                        receipt_date: receiptDateText,
+                        receipt_items: itemsText,
+                        receipt_total: totalAmount,
+                        to_name: '' // Optional: add customer name if available
+                    }
+                )
+                .then(function(response) {
+                    console.log('SUCCESS!', response.status, response.text);
+                    showEmailStatus('تم إرسال الإيصال بنجاح إلى ' + email, 'success');
+                    
+                    // Close modal after success
+                    setTimeout(() => {
+                        closeModal(emailModal);
+                    }, 2000);
+                })
+                .catch(function(error) {
+                    console.log('FAILED...', error);
+                    showEmailStatus('فشل في إرسال البريد الإلكتروني. حاول مرة أخرى.', 'error');
+                });
+            }
+
+            /**
+             * Show email status message
+             * @param {string} message - Message to display
+             * @param {string} type - Message type (success, error, loading)
+             */
+            function showEmailStatus(message, type) {
+                emailStatus.textContent = message;
+                emailStatus.className = 'email-status';
+                emailStatus.classList.add(type);
+                
+                if (type === 'loading') {
+                    emailStatus.innerHTML = `
+                        <div class="loading" style="display: inline-block; margin-right: 10px;"></div>
+                        ${message}
+                    `;
+                }
+                
+                emailStatus.hidden = false;
+            }
+            
+            /**
+             * Validate email format
+             * @param {string} email - Email to validate
+             * @returns {boolean} - True if valid, false otherwise
+             */
+            function validateEmail(email) {
+                const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                return re.test(email.toLowerCase());
+            }
+            
+            function startNewOrder() {
+                // Reset cart
+                cart = [];
+                updateCart();
+                
+                // Reset payment method
+                selectedPaymentMethod = null;
+                paymentMethods.forEach(m => m.classList.remove('active'));
+                cashPayment.hidden = true;
+                cardPayment.hidden = true;
+                if (qlickPayment) {
+                    qlickPayment.hidden = true;
+                }
+                
+                // Hide receipt
+                receiptSection.style.display = 'none';
+                checkoutSection.style.display = 'none';
+                
+                // Reset scanner
+                if (!scannerActive) {
+                    scannerPlaceholder.hidden = false;
+                    interactiveEl.hidden = true;
+                }
+            }
+            
+            function handleAdminLogin() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Simple authentication (in real app, use proper authentication)
+                if (username === 'admin' && password === 'admin123') {
+                    adminLogin.style.display = 'none';
+                    adminContent.hidden = false;
+                    updateProductsList();
+                    
+                    // Add the sync button when logging in
+                    setupAdminSyncButton();
+                    
+                    // Setup transaction logger interface
+                    TransactionLogger.setupAdminInterface();
+                } else {
+                    alert('Invalid credentials');
+                }
+            }
+            
+            function updateProductsList() {
+                productsList.innerHTML = '';
+                
+                products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${product.barcode}</td>
+                        <td>${product.name}</td>
+                        <td>${product.price.toFixed(2)} دينار</td>
+                        <td class="product-actions">
+                            <button class="edit-btn" data-barcode="${product.barcode}">Edit</button>
+                            <button class="delete-btn" data-barcode="${product.barcode}">Delete</button>
+                        </td>
+                    `;
+                    productsList.appendChild(row);
+                });
+                
+                // Add event listeners to edit and delete buttons
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', showEditProductModal);
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', showDeleteProductConfirmation);
+                });
+            }
+            
+            function handleAddProduct() {
+                // Get form values
+                const barcode = document.getElementById('productBarcode').value;
+                const name = document.getElementById('productName').value;
+                const price = parseFloat(document.getElementById('productPrice').value);
+                
+                // Check if barcode already exists
+                const existingProduct = products.find(p => p.barcode === barcode);
+                
+                if (existingProduct) {
+                    // Show warning about sheet sync
+                    showConfirmModal(
+                        'Warning: This product exists in your Google Sheet and may be overwritten during the next sync. Would you like to continue?',
+                        () => {
+                            // Add product locally
+                            products.push({
+                                barcode,
+                                name,
+                                price
+                            });
+                            
+                            // Save to localStorage
+                            localStorage.setItem('products', JSON.stringify(products));
+                            
+                            // Update products list
+                            updateProductsList();
+                            
+                            // Reset form
+                            addProductForm.reset();
+                            
+                            // Close modal
+                            closeModal(addProductModal);
+                            
+                            // Show success message with warning
+                            alert('Product added locally. Note that this change may be overwritten by the next sync with your Google Sheet.');
+                        }
+                    );
+                } else {
+                    // Add product locally
+                    products.push({
+                        barcode,
+                        name,
+                        price
+                    });
+                    
+                    // Save to localStorage
+                    localStorage.setItem('products', JSON.stringify(products));
+                    
+                    // Update products list
+                    updateProductsList();
+                    
+                    // Reset form
+                    addProductForm.reset();
+                    
+                    // Close modal
+                    closeModal(addProductModal);
+                    
+                    // Show success message with warning
+                    alert('Product added locally. Note that this product is not in your Google Sheet and may be removed during the next sync.');
+                }
+            }
+            
+            function showEditProductModal(event) {
+                const barcode = event.target.dataset.barcode;
+                const product = products.find(p => p.barcode === barcode);
+                
+                if (!product) return;
+                
+                // Fill form with product data
+                editBarcode.value = product.barcode;
+                editName.value = product.name;
+                editPrice.value = product.price;
+                
+                // Show modal
+                editProductModal.style.display = 'flex';
+            }
+            
+            function handleSaveProduct() {
+                const barcode = editBarcode.value;
+                const name = editName.value;
+                const price = parseFloat(editPrice.value);
+                
+                // Find product index
+                const index = products.findIndex(p => p.barcode === barcode);
+                
+                if (index === -1) return;
+                
+                // Show warning about sheet sync
+                showConfirmModal(
+                    'Warning: This edit is only local and may be overwritten during the next sync with your Google Sheet. Would you like to continue?',
+                    () => {
+                        // Update product locally
+                        products[index] = {
+                            barcode,
+                            name,
+                            price
+                        };
+                        
+                        // Save to localStorage
+                        localStorage.setItem('products', JSON.stringify(products));
+                        
+                        // Update products list
+                        updateProductsList();
+                        
+                        // Close modal
+                        closeModal(editProductModal);
+                        
+                        // Show sync notification
+                        const syncNowBtn = document.createElement('button');
+                        syncNowBtn.textContent = 'Sync Now';
+                        syncNowBtn.className = 'action-button';
+                        syncNowBtn.style.marginLeft = '10px';
+                        syncNowBtn.onclick = fetchProductsFromSheet;
+                        
+                        const notification = document.createElement('div');
+                        notification.className = 'sync-notification';
+                        notification.innerHTML = 'Product updated locally. <span style="font-weight: bold;">Remember: Changes made locally will be overwritten by the Google Sheet during the next sync.</span> ';
+                        notification.appendChild(syncNowBtn);
+                        notification.style.position = 'fixed';
+                        notification.style.top = '20px';
+                        notification.style.left = '50%';
+                        notification.style.transform = 'translateX(-50%)';
+                        notification.style.backgroundColor = '#FFF3CD';
+                        notification.style.color = '#856404';
+                        notification.style.padding = '15px 20px';
+                        notification.style.borderRadius = 'var(--border-radius)';
+                        notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                        notification.style.zIndex = '9999';
+                        notification.style.maxWidth = '90%';
+                        notification.style.textAlign = 'center';
+                        document.body.appendChild(notification);
+                        
+                        // Remove the notification after 6 seconds
+                        setTimeout(() => {
+                            notification.style.opacity = '0';
+                            notification.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => notification.remove(), 500);
+                        }, 6000);
+                    }
+                );
+            }
+            
+            function showDeleteProductConfirmation(event) {
+                const barcode = event.target.dataset.barcode;
+                const product = products.find(p => p.barcode === barcode);
+                
+                if (!product) return;
+                
+                showConfirmModal(`Are you sure you want to delete ${product.name}?`, () => {
+                    deleteProduct(barcode);
+                });
+            }
+            
+            function deleteProduct(barcode) {
+                // Show warning about sheet sync
+                showConfirmModal(
+                    'Warning: This delete is only local and will be reset during the next sync with your Google Sheet. Would you like to continue?',
+                    () => {
+                        // Remove product
+                        products = products.filter(p => p.barcode !== barcode);
+                        
+                        // Save to localStorage
+                        localStorage.setItem('products', JSON.stringify(products));
+                        
+                        // Update products list
+                        updateProductsList();
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'sync-notification';
+                        notification.innerHTML = 'Product deleted locally. This change will be reset during the next sync with your Google Sheet.';
+                        notification.style.position = 'fixed';
+                        notification.style.top = '20px';
+                        notification.style.left = '50%';
+                        notification.style.transform = 'translateX(-50%)';
+                        notification.style.backgroundColor = '#FFF3CD';
+                        notification.style.color = '#856404';
+                        notification.style.padding = '15px 20px';
+                        notification.style.borderRadius = 'var(--border-radius)';
+                        notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                        notification.style.zIndex = '9999';
+                        notification.style.maxWidth = '90%';
+                        notification.style.textAlign = 'center';
+                        document.body.appendChild(notification);
+                        
+                        // Remove the notification after 4 seconds
+                        setTimeout(() => {
+                            notification.style.opacity = '0';
+                            notification.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => notification.remove(), 500);
+                        }, 4000);
+                    }
+                );
+            }
+            
+            function showConfirmModal(message, onConfirm) {
+                confirmMessage.textContent = message;
+                confirmAction = onConfirm;
+                confirmModal.style.display = 'flex';
+            }
+            
+            function handleConfirmYes() {
+                if (typeof confirmAction === 'function') {
+                    confirmAction();
+                }
+                closeModal(confirmModal);
+            }
+            
+            function handleConfirmNo() {
+                closeModal(confirmModal);
+            }
+            
+            function closeModal(modal) {
+                modal.style.display = 'none';
+            }
+            
+            /**
+             * Open the barcode scanner modal for admin product forms
+             */
+            function openBarcodeScannerModal(event) {
+                currentBarcodeTarget = event.currentTarget.dataset.target;
+                scannerModal.style.display = 'flex';
+                initAdminScanner();
+            }
+            
+            /**
+             * Close the barcode scanner modal
+             */
+            function closeScannerModalHandler() {
+                if (adminScannerActive) {
+                    Quagga.stop();
+                    adminScannerActive = false;
+                }
+                scannerModal.style.display = 'none';
+            }
+            
+            /**
+             * Initialize the barcode scanner for admin use
+             */
+            function initAdminScanner() {
+                if (adminScannerActive) return;
+                
+                adminScanFeedback.textContent = 'Initializing scanner...';
+                
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: adminScannerViewport,
+                        constraints: {
+                            width: 640,
+                            height: 480,
+                            facingMode: "environment"
+                        },
+                        area: {
+                            top: "25%",
+                            right: "15%",
+                            left: "15%",
+                            bottom: "25%"
+                        }
+                    },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    frequency: 10,
+                    decoder: {
+                        readers: [
+                            "ean_reader",
+                            "ean_8_reader", 
+                            "code_128_reader",
+                            "code_39_reader",
+                            "code_93_reader",
+                            "upc_reader",
+                            "upc_e_reader"
+                        ],
+                        debug: {
+                            showCanvas: true,
+                            showPatches: true,
+                            showFoundPatches: true,
+                            showSkeleton: true,
+                            showLabels: true,
+                            showPatchLabels: true,
+                            showRemainingPatchLabels: true
+                        }
+                    },
+                    locate: true,
+                    multiple: false
+                }, function(err) {
+                    if (err) {
+                        adminScanFeedback.textContent = 'Scanner initialization failed: ' + err;
+                        return;
+                    }
+                    
+                    adminScanFeedback.textContent = 'Scanner ready. Point camera at a barcode.';
+                    adminScannerActive = true;
+                    Quagga.start();
+                });
+                
+                // Handle detection - fixed to properly update the target input field
+                Quagga.onDetected(function(result) {
+                    // Check if the result is trustworthy
+                    if (result.codeResult.startInfo.error > 0.1) {
+                        // Too much error, ignore this scan
+                        return;
+                    }
+                    
+                    let code = result.codeResult.code;
+                    adminScanFeedback.textContent = 'Barcode detected: ' + code;
+                    
+                    // Beep sound for feedback
+                    beep();
+                    
+                    // Update the target input field
+                    if (currentBarcodeTarget) {
+                        document.getElementById(currentBarcodeTarget).value = code;
+                    }
+                    
+                    // Stop scanner automatically upon detection
+                    Quagga.stop();
+                    adminScannerActive = false;
+                    setTimeout(() => {
+                        scannerModal.style.display = 'none';
+                    }, 1000);
+                });
+                
+                // Visual feedback during scanning - like in the customer scanner
+                Quagga.onProcessed(function(result) {
+                    const drawingCtx = Quagga.canvas.ctx.overlay;
+                    const drawingCanvas = Quagga.canvas.dom.overlay;
+                    
+                    if (result) {
+                        if (result.boxes) {
+                            drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                            result.boxes.filter(function(box) {
+                                return box !== result.box;
+                            }).forEach(function(box) {
+                                Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "yellow", lineWidth: 2 });
+                            });
+                        }
+                        
+                        if (result.box) {
+                            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                        }
+                        
+                        if (result.codeResult && result.codeResult.code) {
+                            Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                        }
+                    }
+                });
+            }
+            
+            /**
+             * Manually capture a barcode from the scanner
+             */
+            function captureBarcode() {
+                // If nothing is detected, close scanner
+                if (adminScannerActive) {
+                    Quagga.stop();
+                    adminScannerActive = false;
+                }
+                scannerModal.style.display = 'none';
+            }
+            
+            // Clean up resources when the page is unloaded
+            window.addEventListener('beforeunload', () => {
+                if (scannerActive) {
+                    Quagga.stop();
+                }
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                }
+            });
+        });
+    </script>
+
+
+
+<script>
+ 
+// Email functionality fix - complete replacement
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all required elements
+    const emailReceiptPill = document.getElementById('emailReceiptPill');
+    const emailModal = document.getElementById('emailModal');
+    const closeEmailModal = document.getElementById('closeEmailModal');
+    const emailInput = document.getElementById('emailInput');
+    const sendEmailBtn = document.getElementById('sendEmailBtn');
+    const cancelEmailBtn = document.getElementById('cancelEmailBtn');
+    const emailStatus = document.getElementById('emailStatus');
+    
+    // Verify EmailJS initialization
+    if (!window.emailjs) {
+        console.error('EmailJS library not loaded!');
+    } else {
+        console.log('EmailJS library detected');
+        
+        // Re-initialize EmailJS to ensure it's properly set up
+        try {
+            emailjs.init("F4mz0C_iDO5B8qfF0");
+            console.log('EmailJS initialized successfully');
+        } catch (error) {
+            console.error('EmailJS initialization error:', error);
+        }
+    }
+    
+    // Functions for email functionality
+    function showEmailModal() {
+        console.log('Opening email modal');
+        if (!emailModal) {
+            console.error('Email modal element not found!');
+            return;
+        }
+        
+        // Clear previous email and status
+        if (emailInput) emailInput.value = '';
+        if (emailStatus) emailStatus.hidden = true;
+        
+        // Show modal with inline style to ensure it's visible
+        emailModal.style.display = 'flex';
+        emailModal.style.opacity = '1';
+        emailModal.style.zIndex = '9999';
+    }
+    
+    function closeModal(modal) {
+        if (!modal) return;
+        modal.style.display = 'none';
+    }
+    
+    function showEmailStatus(message, type) {
+        if (!emailStatus) return;
+        
+        emailStatus.textContent = message;
+        emailStatus.className = 'email-status';
+        emailStatus.classList.add(type);
+        
+        if (type === 'loading') {
+            emailStatus.innerHTML = `
+                <div class="loading" style="display: inline-block; margin-right: 10px;"></div>
+                ${message}
+            `;
+        }
+        
+        emailStatus.hidden = false;
+    }
+    
+    function validateEmail(email) {
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(email.toLowerCase());
+    }
+    
+    function sendReceiptByEmail() {
+        const email = emailInput.value.trim();
+        
+        if (!email || !validateEmail(email)) {
+            showEmailStatus('الرجاء إدخال عنوان بريد إلكتروني صحيح', 'error');
+            return;
+        }
+        
+        showEmailStatus('جارٍ إرسال الإيصال...', 'loading');
+        
+        // Get receipt info from the page
+        const receiptNumber = document.getElementById('receiptNumber');
+        const receiptDate = document.getElementById('receiptDate');
+        const receiptTotal = document.getElementById('receiptTotal');
+        const cartItems = window.cart || [];
+        
+        const receiptId = receiptNumber ? receiptNumber.textContent.replace('رقم الإيصال #', '') : 'Unknown';
+        const receiptDateText = receiptDate ? receiptDate.textContent : 'Unknown';
+        const totalAmount = receiptTotal ? receiptTotal.textContent : 'Unknown';
+        
+        // Format cart items for email
+        let itemsText = '';
+        if (cartItems && cartItems.length > 0) {
+            cartItems.forEach(item => {
+                itemsText += `${item.name} x ${item.quantity} - ${(item.price * item.quantity).toFixed(2)} دينار\n`;
+            });
+        } else {
+            itemsText = 'No items';
+        }
+        
+        console.log('Sending email with EmailJS...');
+        console.log('Service ID: service_jm8805r');
+        console.log('Template ID: template_860c1pw');
+        console.log('Email:', email);
+        
+        // Send email using EmailJS
+        emailjs.send(
+            'service_jm8805r',
+            'template_860c1pw',
+            {
+                to_email: email,
+                receipt_number: receiptId,
+                receipt_date: receiptDateText,
+                receipt_items: itemsText,
+                receipt_total: totalAmount,
+                to_name: '' // Optional: add customer name if available
+            }
+        )
+        .then(function(response) {
+            console.log('SUCCESS!', response.status, response.text);
+            showEmailStatus('تم إرسال الإيصال بنجاح إلى ' + email, 'success');
+            
+            // Close modal after success
+            setTimeout(() => {
+                closeModal(emailModal);
+            }, 2000);
+        })
+        .catch(function(error) {
+            console.log('FAILED...', error);
+            showEmailStatus('فشل في إرسال البريد الإلكتروني. حاول مرة أخرى.', 'error');
+        });
+    }
+    
+    // Attach all event listeners
+    if (emailReceiptPill) {
+        console.log('Email receipt pill found, attaching click handler');
+        emailReceiptPill.addEventListener('click', showEmailModal);
+        
+        // Make it more obvious it's clickable
+        emailReceiptPill.style.cursor = 'pointer';
+        emailReceiptPill.title = 'انقر هنا لإرسال الإيصال عبر البريد الإلكتروني';
+    } else {
+        console.error('Email receipt pill not found!');
+    }
+    
+    if (closeEmailModal) {
+        closeEmailModal.addEventListener('click', function() {
+            closeModal(emailModal);
+        });
+    }
+    
+    if (cancelEmailBtn) {
+        cancelEmailBtn.addEventListener('click', function() {
+            closeModal(emailModal);
+        });
+    }
+    
+    if (sendEmailBtn) {
+        sendEmailBtn.addEventListener('click', sendReceiptByEmail);
+    }
+    
+    // Add a direct button as backup
+    try {
+        const receiptSection = document.querySelector('.fullscreen-modal-body');
+        if (receiptSection && emailReceiptPill) {
+            const backupButton = document.createElement('button');
+            backupButton.textContent = 'إرسال الإيصال عبر البريد الإلكتروني';
+            backupButton.style.marginTop = '20px';
+            backupButton.style.padding = '10px 15px';
+            backupButton.style.backgroundColor = 'var(--accent)';
+            backupButton.style.color = 'white';
+            backupButton.style.border = 'none';
+            backupButton.style.borderRadius = 'var(--border-radius)';
+            backupButton.style.cursor = 'pointer';
+            backupButton.style.display = 'block';
+            backupButton.style.margin = '20px auto';
+            backupButton.addEventListener('click', showEmailModal);
+            
+            // Add after the email pill's parent
+            emailReceiptPill.parentNode.after(backupButton);
+            console.log('Backup email button added');
+        }
+    } catch (e) {
+        console.error('Could not add backup button:', e);
+    }
+    
+    console.log('Email functionality setup complete');
+});
+</script>
+</body>
+</html>
